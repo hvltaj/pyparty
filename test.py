@@ -6,12 +6,12 @@ sub = Subscription("tom", "localhost", 22222, "", None, "ziooom")
 
 # pp.subscribe(sub)
 
-pp.unsubscribe(sub)
-
-eve = Event("alan", "ziooom", "fuck me, it's delicious!")
-
-for a in pp.publish(eve):
-    print a.get_url()
+print pp.unsubscribe(sub)
+#
+# eve = Event("alan", "ziooom", "fuck me, it's delicious!")
+#
+# for a in pp.publish(eve):
+#     print a.get_url()
 
 
 

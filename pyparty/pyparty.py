@@ -1,6 +1,6 @@
-import requests
 from pymongo import MongoClient
 import datetime
+
 
 class Pyparty(object):
 
@@ -28,7 +28,6 @@ class Pyparty(object):
                 "date": datetime.datetime.now()
                 }
 
-        # TODO exceptions
         post_id = self.db_subscriptions.insert_one(post).inserted_id
         return post_id
 
@@ -46,8 +45,8 @@ class Pyparty(object):
             }
         ]}
 
-        # TODO exceptions
-        self.db_subscriptions.delete_many(query)
+        result = self.db_subscriptions.delete_many(query)
+        return result.deleted_count
 
     def publish(self, event):
 

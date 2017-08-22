@@ -29,11 +29,27 @@ class Pyparty(object):
                 }
 
         # TODO exceptions
-        post_id = self.db_events.insert_one(post).inserted_id
+        post_id = self.db_subscriptions.insert_one(post).inserted_id
         return post_id
 
+    def unsubscribe(self, subscription):
+
+        query = {"$and": [
+            {
+                "subscriber_name": {"$eq": subscription.subscriber_name}
+            },
+            {
+                "$or": [
+                    {"event_name": {"$eq": subscription.event_name}},
+                    {"publisher_name": {"$eq": subscription.publisher_name}}
+                    ]
+            }
+        ]}
+
+        # TODO exceptions
+        self.db_subscriptions.delete_many(query)
+
     def publish(self, event):
-        self.refresh_db()
 
         query = {"$or": [
                 {
@@ -46,22 +62,16 @@ class Pyparty(object):
 
         for subscription in self.db_subscriptions.find(query):
 
-            url = subscription.subscriber_host + ":" + \
-                  subscription.subscriber_port + subscription.subscriber_path
+            sub = Subscription(subscription["subscriber_name"], subscription["subscriber_host"],
+                               subscription["subscriber_port"], subscription["subscriber_path"],
+                               subscription["publisher_name"], subscription["event_name"])
 
-            r = requests.post(url, json=event.json)
-
-            if r.status_code == requests.codes.ok:
-                pass
-                # TODO it's ok!
-            else:
-                pass
-                # TODO it's not ok!
+            yield sub
 
     def refresh_db(self):
 
         self.db = self.client['EventsDB']
-        self.db_subscriptions = self.db['Events']
+        self.db_subscriptions = self.db['Subscriptions']
 
 
 class Event(object):
@@ -91,7 +101,13 @@ class Subscription(object):
         self.publisher_name = publisher_name
         self.event_name = event_name
 
-        if not publisher_name or event_name:
+        if not (publisher_name or event_name):
             raise ValueError("publisher_name or event_name value has to be "
                              "provided in order to make a subscription ")
+
+    def get_url(self):
+
+        return "http://" + self.subscriber_host + ":" + \
+              str(self.subscriber_port) + self.subscriber_path
+
 

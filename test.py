@@ -1,4 +1,4 @@
-from pyparty import Pyparty, Subscription, Event
+from pyparty.pyparty import Pyparty, Subscription, Event
 
 pp = Pyparty('localhost', 27017)
 

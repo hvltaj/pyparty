@@ -57,6 +57,10 @@ class PypartyServer(object):
 
                 data = json.loads(new_data)
 
+                # Match service key to a given pyparty method.
+                # Throws KeyError is service not present in the JSON request,
+                # and ValueError is JSON is not properly constructed
+
                 if data["service"] == "subscribe":
                     sub = Subscription(data["subscriber_name"],
                                        data["subscriber_host"],
@@ -110,6 +114,8 @@ class PypartyServer(object):
 
                     logger.info("%s unsubscribed %s" % (
                         data["subscription_id"], result))
+                else:
+                    raise KeyError("There is no matching service")
 
             except KeyError:
                 payload = self.BAD_HTTP_RESPONSE % json.dumps(
@@ -151,7 +157,8 @@ class PypartyServer(object):
                 protocol = "http://"
 
             return protocol + subscription.subscriber_host + ":" + \
-                str(subscription.subscriber_port) + subscription.subscriber_path
+                str(subscription.subscriber_port) + \
+                subscription.subscriber_path
 
 if __name__ == "__main__":
     """ Non default ports and hosts may be set up using command line """

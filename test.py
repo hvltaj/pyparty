@@ -1,12 +1,13 @@
 from pyparty.pyparty import Pyparty, Subscription, Event
+import threading
 
-pp = Pyparty('localhost', 27017)
+#pp = Pyparty('localhost', 27017)
 
-sub = Subscription("tom", "localhost", 22222, "", None, "ziooom")
+#sub = Subscription("tom", "localhost", 22222, "", None, "ziooom")
 
 # pp.subscribe(sub)
 
-print pp.unsubscribe(sub)
+#print pp.unsubscribe(sub)
 #
 # eve = Event("alan", "ziooom", "fuck me, it's delicious!")
 #
@@ -31,3 +32,21 @@ else:
     pass
     # TODO it's not ok!
 """
+
+
+def loop(n):
+    for i in range(n):
+        print i
+
+# create threads
+threads = [threading.Thread(target=loop, args=(15,))
+           for i in range(10)]
+
+# start threads
+for t in threads:
+    t.start()
+
+# wait for threads to finish
+for t in threads:
+    t.join()
+

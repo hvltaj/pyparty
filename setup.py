@@ -10,5 +10,6 @@ setup(name='pyparty',
       packages=['pyparty'],
       install_requires=[
           'pymongo',
+          'requests'
       ],
       zip_safe=False)

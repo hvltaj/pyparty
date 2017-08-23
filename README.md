@@ -23,6 +23,7 @@ request:
     }
 
 response:
+    
     200 OK
 
     {"object_id": "599da72edebc474c3ec2571b"}
@@ -40,6 +41,7 @@ request:
     }
 
 response:
+    
     200 OK
 
     {"publish_count": 17}
@@ -55,6 +57,7 @@ request:
     }
 
 response:
+    
     200 OK
 
     {"deleted_count": 0}

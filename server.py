@@ -1,5 +1,4 @@
 import socket
-import sys
 import json
 from pyparty.pyparty import Pyparty, Subscription, Event
 import argparse
@@ -64,8 +63,10 @@ class PypartyServer(object):
             # Wait for a connection
             connection, client_address = sock.accept()
 
+            payload = ""
+
             try:
-                self.logger.info('connection from %s' % client_address)
+                self.logger.info('connection from %s:%s' % client_address)
 
                 new_data = connection.recv(1024)
 
@@ -83,7 +84,11 @@ class PypartyServer(object):
 
                     result = eventing_engine.subscribe(sub)
 
-                    payload = json.dumps({"object_id": str(result)})
+                    payload = self.OK_HTTP_RESPONSE % \
+                        json.dumps({"object_id": str(result)})
+
+                    self.logger.info("%s Subscription successful" %
+                                     json.dumps({"object_id": str(result)}))
 
                 elif data["service"] == "publish":
                     event = Event(data["publisher_name"],
@@ -93,7 +98,8 @@ class PypartyServer(object):
                     threads = [threading.Thread(target=self.send_event,
                                                 args=(subscriber.get_url(),
                                                       event.json))
-                               for subscriber in eventing_engine.publish(event)]
+                               for subscriber in eventing_engine.publish(event)
+                               ]
 
                     # start threads
                     for t in threads:
@@ -103,17 +109,19 @@ class PypartyServer(object):
                     for t in threads:
                         t.join()
 
-                    payload = json.dumps({"Status": 200})
-
+                    payload = self.OK_HTTP_RESPONSE % \
+                        json.dumps({"publish_count": len(threads)})
 
                 elif data["service"] == "unsubscribe":
-                    sub = Subscription(data["subscriber_name"], data["subscriber_host"],
-                                       data["subscriber_port"], data["subscriber_path"],
-                                       data["publisher_name"], data["event_name"])
 
-                    result = eventing_engine.unsubscribe(sub)
+                    result = eventing_engine.unsubscribe(
+                        data["subscription_id"])
 
-                    payload = json.dumps({"number_of_unsubscribes": result})
+                    payload = self.OK_HTTP_RESPONSE % \
+                        json.dumps({"deleted_count": result})
+
+                    self.logger.info("%s unsubscribed %s" % (
+                        data["subscription_id"], result))
 
             except KeyError:
                 payload = self.BAD_HTTP_RESPONSE % json.dumps(
@@ -126,23 +134,28 @@ class PypartyServer(object):
                 self.logger.info("Status 400, ValueError - incorrect JSON")
 
             finally:
-
-                print >> sys.stderr, 'sending data back to the client'
+                # print >> sys.stderr, 'sending data back to the client'
                 connection.sendall(payload)
 
                 # Clean up the connection
                 connection.close()
 
     def send_event(self, url, json_payload):
-        r = requests.post(url, json=json_payload)
+        try:
+            r = requests.post(url, json=json_payload)
 
-        if r.status_code == requests.codes.ok:
-            self.logger.info("%s send success" % url)
-        else:
-            self.logger.info("%s send error" % url )
+            print r.status_code
 
+            if r.status_code == requests.codes.ok:
+                self.logger.info("%s send success" % url)
+            else:
+                self.logger.info("%s send error. response_code: %s" %
+                                 (url, r.status_code))
+        except requests.ConnectionError:
+            self.logger.info("%s Connection error" % url)
 
 if __name__ == "__main__":
+    """ Non """
 
     parser = argparse.ArgumentParser(description='Run pyparty Event Engine '
                                                  'server.')

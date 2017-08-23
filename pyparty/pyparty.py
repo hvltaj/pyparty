@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import datetime
 from bson.objectid import ObjectId
+from collections import namedtuple
 
 
 class Pyparty(object):
@@ -94,47 +95,14 @@ class Pyparty(object):
         self.db = self.client['EventsDB']
         self.db_subscriptions = self.db['Subscriptions']
 
+""" Store all info about an Event"""
 
-class Event(object):
-    """ Data class. Holds information about an event"""
+Event = namedtuple("Event", 'publisher_name event_name event_description')
 
-    def __init__(self, publisher_name, event_name, event_description):
+""" Store all info about a Subscription"""
 
-        self.publisher_name = publisher_name
-        self.event_name = event_name
-        self.event_description = event_description
-
-        self.json = {
-            "publisher_name": self.publisher_name,
-            "event_name": self.event_name,
-            "event_description": self.event_description
-        }
-
-
-class Subscription(object):
-    """ Data class. Holds information about a subscription"""
-
-    def __init__(self, subscriber_name, subscriber_host, subscriber_port,
-                 subscriber_path, publisher_name=None, event_name=None):
-
-        self.subscriber_name = subscriber_name
-        self.subscriber_host = subscriber_host
-        self.subscriber_path = subscriber_path
-        self.subscriber_port = subscriber_port
-        self.publisher_name = publisher_name
-        self.event_name = event_name
-
-        if not (publisher_name or event_name):
-            raise ValueError("publisher_name or event_name value has to be "
-                             "provided in order to make a subscription ")
-
-    def get_url(self, protocol=None):
-        """ Returns a subscriber url"""
-
-        if not protocol:
-            protocol = "http://"
-
-        return protocol + self.subscriber_host + ":" + \
-            str(self.subscriber_port) + self.subscriber_path
+Subscription = namedtuple("Subscription", 'subscriber_name subscriber_host '
+                                          'subscriber_port subscriber_path '
+                                          'publisher_name event_name')
 
 

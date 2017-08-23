@@ -29,21 +29,6 @@ class PypartyServer(object):
         self.db_port = db_port or self.MONGO_PORT
         self.db_host = db_host or self.MONGO_HOST
 
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-        # create a file handler
-        handler = logging.FileHandler('pyparty_server.log')
-        handler.setLevel(logging.INFO)
-
-        # create a logging format
-        formatter = logging.Formatter(
-            '%(asctime)s - %(message)s')
-        handler.setFormatter(formatter)
-
-        # add the handlers to the logger
-        self.logger.addHandler(handler)
-
     def run_server(self):
 
         # Create a TCP/IP socket
@@ -51,7 +36,7 @@ class PypartyServer(object):
 
         # Bind the socket to the port
         server_address = ('localhost', self.server_port)
-        self.logger.info('starting up on %s port %s' % server_address)
+        logger.info('starting up on %s port %s' % server_address)
         sock.bind(server_address)
 
         # Listen for incoming connections
@@ -66,11 +51,11 @@ class PypartyServer(object):
             payload = ""
 
             try:
-                self.logger.info('connection from %s:%s' % client_address)
+                logger.info('connection from %s:%s' % client_address)
 
                 new_data = connection.recv(1024)
 
-                self.logger.info('received "%s"' % new_data)
+                logger.info('received "%s"' % new_data)
 
                 data = json.loads(new_data)
 
@@ -87,7 +72,7 @@ class PypartyServer(object):
                     payload = self.OK_HTTP_RESPONSE % \
                         json.dumps({"object_id": str(result)})
 
-                    self.logger.info("%s Subscription successful" %
+                    logger.info("%s Subscription successful" %
                                      json.dumps({"object_id": str(result)}))
 
                 elif data["service"] == "publish":
@@ -96,8 +81,13 @@ class PypartyServer(object):
                                   data["event_description"])
 
                     threads = [threading.Thread(target=self.send_event,
-                                                args=(subscriber.get_url(),
-                                                      event.json))
+                                                args=(
+                                                    self.get_url(subscriber),
+                                                    json.dumps(
+                                                        event._asdict()
+                                                    )
+                                                )
+                                                )
                                for subscriber in eventing_engine.publish(event)
                                ]
 
@@ -120,18 +110,18 @@ class PypartyServer(object):
                     payload = self.OK_HTTP_RESPONSE % \
                         json.dumps({"deleted_count": result})
 
-                    self.logger.info("%s unsubscribed %s" % (
+                    logger.info("%s unsubscribed %s" % (
                         data["subscription_id"], result))
 
             except KeyError:
                 payload = self.BAD_HTTP_RESPONSE % json.dumps(
                     {"Error": "Incorrect service"})
-                self.logger.info("Status 400, KeyError - incorrect service")
+                logger.info("Status 400, KeyError - incorrect service")
 
             except ValueError:
                 payload = self.BAD_HTTP_RESPONSE % \
                           json.dumps({"Error": "Incorrect JSON"})
-                self.logger.info("Status 400, ValueError - incorrect JSON")
+                logger.info("Status 400, ValueError - incorrect JSON")
 
             finally:
                 # print >> sys.stderr, 'sending data back to the client'
@@ -140,19 +130,30 @@ class PypartyServer(object):
                 # Clean up the connection
                 connection.close()
 
-    def send_event(self, url, json_payload):
+    @staticmethod
+    def send_event(url, json_payload):
         try:
             r = requests.post(url, json=json_payload)
 
             print r.status_code
 
             if r.status_code == requests.codes.ok:
-                self.logger.info("%s send success" % url)
+                logger.info("%s send success" % url)
             else:
-                self.logger.info("%s send error. response_code: %s" %
+                logger.info("%s send error. response_code: %s" %
                                  (url, r.status_code))
         except requests.ConnectionError:
-            self.logger.info("%s Connection error" % url)
+            logger.info("%s Connection error" % url)
+
+    @staticmethod
+    def get_url(subscription, protocol=None):
+            """ Returns a subscriber url"""
+
+            if not protocol:
+                protocol = "http://"
+
+            return protocol + subscription.subscriber_host + ":" + \
+                str(subscription.subscriber_port) + subscription.subscriber_path
 
 if __name__ == "__main__":
     """ Non """
@@ -170,6 +171,21 @@ if __name__ == "__main__":
                              'running. Default is <localhost>')
 
     args = parser.parse_args()
+
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    # create a file handler
+    handler = logging.FileHandler('pyparty_server.log')
+    handler.setLevel(logging.INFO)
+
+    # create a logging format
+    formatter = logging.Formatter(
+        '%(asctime)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(handler)
 
     server = PypartyServer(server_port=args.server_port,
                            db_port=args.mongo_port,

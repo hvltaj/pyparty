@@ -11,6 +11,7 @@ sample requests and responses:
 > subscribe
 
 request:
+    
     {
     "subscriber_name": "filip",
     "subscriber_host": "localhost",
@@ -30,6 +31,7 @@ response:
 > publish
 
 request:
+    
     {
     "event_description": "Olaboga, co to za event!",
     "publisher_name": "turbot",
@@ -46,6 +48,7 @@ response:
 > unsubscribe
 
 request:
+    
     {
     "service": "unsubscribe",
     "subscription_id": "599d6e1adebc471061dbcf3c"

@@ -13,13 +13,11 @@ class PypartyServer(object):
     MONGO_PORT = 27017
     MONGO_HOST = 'localhost'
 
-    OK_HTTP_RESPONSE = "HTTP/1.1 200 OK\n" + \
-                       "Content-Type: application/json\n" + \
+    OK_HTTP_RESPONSE = "200 OK\n" + \
                        "\n" + \
                        "%s"
 
-    BAD_HTTP_RESPONSE = "HTTP/1.1 400 Bad Request\n" + \
-                        "Content-Type: application/json\n" + \
+    BAD_HTTP_RESPONSE = "400 Bad Request\n" + \
                         "\n" + \
                         "%s"
 
@@ -137,7 +135,7 @@ class PypartyServer(object):
 
             print r.status_code
 
-            if r.status_code == requests.codes.ok:
+            if r.ok:
                 logger.info("%s send success" % url)
             else:
                 logger.info("%s send error. response_code: %s" %
@@ -156,7 +154,7 @@ class PypartyServer(object):
                 str(subscription.subscriber_port) + subscription.subscriber_path
 
 if __name__ == "__main__":
-    """ Non """
+    """ Non default ports and hosts may be set up using command line """
 
     parser = argparse.ArgumentParser(description='Run pyparty Event Engine '
                                                  'server.')
@@ -171,6 +169,8 @@ if __name__ == "__main__":
                              'running. Default is <localhost>')
 
     args = parser.parse_args()
+
+    """ Initialize and set up logging """
 
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
